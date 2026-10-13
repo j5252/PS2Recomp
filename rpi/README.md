@@ -13,7 +13,7 @@ Assim o binário pede o glibc certo. Funciona em Debian/Ubuntu/Kali nativos ou n
 | Runtime + IOP compilam para armhf (sse2neon em ARMv7) | ok |
 | `ps2x_tests` no qemu-arm | **437/437 passam** |
 | Homebrew `samples/hello` recompilado e linkado | ok (ainda não executado no Pi) |
-| Jogo comercial grande (≈19 mil funções) | recompila; o build armhf leva horas numa máquina de 4 núcleos |
+| Jogo comercial grande (≈19 mil funções, Metal Slug 3) | recompila e gera `ps2EntryRunner` armhf (89,5 MB); cerca de 4 h em 4 vCPUs; ainda não executado |
 | Execução real no Pi 2B | **não testada ainda** |
 
 O GS do runtime é renderizado **por software**: a GPU só recebe a imagem pronta como textura.

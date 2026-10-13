@@ -60,6 +60,9 @@ Commits em `rpi2-armhf` sobre `upstream/main`:
 - `ps2xRuntime/CMakeLists.txt`: opção `PS2X_RPI_DRM`, que compila o raylib com `PLATFORM=DRM` (GLES2)
   e desliga a UI de debug.
 - `ps2xRuntime/cmake/ReleaseMode.cmake`: opção `PS2X_ENABLE_LTO` (padrão ON, como no upstream).
+- `ps2xRecomp/src/lib/function_table_emitter.cpp`: tabela de registro de funções emitida como
+  dados constantes em vez de uma atribuição por linha (ver seção 6); testes ajustados em
+  `ps2xTest/src/code_generator_tests.cpp`.
 - `rpi/`: `setup.sh`, `build.sh`, `recompile.sh`, `chroot_common.sh`, `toolchain-armhf.cmake`,
   `samples/hello`, `README.md`.
 
@@ -74,7 +77,7 @@ upstream seja viável.
 | `ps2x_tests` armhf sob `qemu-arm` | **437 passaram, 0 falharam** |
 | `hello.elf` (ps2dev, `-g`) → recompilado (474 arquivos) → `ps2EntryRunner` armhf | linka. **Não executado** (sem Pi/DRM no ambiente) |
 | Metal Slug 3 `SLES_525.99` → recompilado | ok: 18.867 arquivos; 18.661 funções com nome real (o ELF tem `.symtab` e relocações, CodeWarrior) |
-| Metal Slug 3 → `ps2EntryRunner` armhf | **não concluído**: com LTO deu OOM (7,4 GB); sem LTO leva cerca de 4 h numa máquina de 4 núcleos. Movido para uma máquina mais forte |
+| Metal Slug 3 → `ps2EntryRunner` armhf | **gerado** (sem LTO): 89,5 MB (83 MB de `.text`), ARMv7-A NEON/VFPv4 hard-float, glibc ≥ 2.38. Cerca de 4 h de compilação em 4 vCPUs (WSL). **Não executado** |
 | Execução em Raspberry Pi real | **nunca feita** |
 | Versão do sistema no Pi do usuário | **não confirmada**. O binário de trixie exige glibc ≥ 2.38 (não roda no Raspberry Pi OS 12/bookworm) |
 
@@ -82,9 +85,8 @@ upstream seja viável.
 
 Cada passo tem um critério de aceite. Não pule para o seguinte sem cumprir o anterior.
 
-1. **Concluir o build do Metal Slug 3 para armhf** numa máquina forte (`rpi/README.md`).
-   Anote tempo, pico de RAM e tamanho do `ps2EntryRunner`.
-   *Aceite:* `outrpi/ps2EntryRunner` gerado; `readelf -A` mostra NEON/hard-float.
+1. ~~Concluir o build do Metal Slug 3 para armhf~~ — **feito em 13/10/2026** (ver seção 4).
+   Numa máquina mais forte, refaça para medir: `sudo JOBS=<núcleos> ./rpi/build.sh`.
 2. **Validar o jogo no PC antes do Pi.** Compile o runner nativo x86-64 Linux (build normal do
    upstream, com raylib desktop) com o mesmo código gerado e rode o ELF com os arquivos do disco.
    Depurar no PC é muito mais rápido que no Pi.
@@ -113,6 +115,11 @@ Cada passo tem um critério de aceite. Não pule para o seguinte sem cumprir o a
   limite as faixas pelo `.symtab`.
 - **Saltos indiretos** (`jr`/`jalr`) viram despacho por tabela em tempo de execução (avisos
   `control-flow ... promoted N fallback entries`). É o comportamento esperado.
+- **Tabela de funções (corrigido neste fork):** o `register_functions.cpp` gerado era um único
+  construtor com uma atribuição por entrada (252 mil linhas no MS3), e o GCC passou mais de 2 h
+  otimizando esse lote. O `function_table_emitter.cpp` agora emite um array constante
+  `{slot, função}` mais um laço; o lote compila e linka em cerca de 1 min. Jogos recompilados
+  antes dessa mudança precisam rodar `ps2_recomp` de novo, pelo menos para regerar esse arquivo.
 - **FFmpeg desligado** no build do Pi: vídeos MPEG/Sofdec (`.SFD`) viram frames vazios.
 - **LTO** num jogo grande precisa de mais de 8 GB num único processo; o `build.sh` desliga por padrão.
 - **WSL:** ler milhares de arquivos de `/mnt/c` derrubou a sessão do WSL várias vezes depois de um
