@@ -157,14 +157,32 @@ namespace ps2recomp
         ss << "extern const uint32_t g_ps2RecompiledFunctionTableSlotCount = " << std::dec << slotCount << "u;\n";
         ss << "PS2Runtime::RecompiledFunction g_ps2RecompiledFunctionTable[" << std::dec << (slotCount == 0u ? 1u : slotCount) << "u] = {};\n\n";
 
+        // Emit the registrations as constant data plus a short loop. One statement per
+        // entry produced a single huge constructor (250k+ lines for a large game) that
+        // took GCC hours to optimize at -O3.
         ss << "namespace {\n";
+        ss << "struct GeneratedFunctionTableEntry {\n";
+        ss << "    uint32_t slot;\n";
+        ss << "    PS2Runtime::RecompiledFunction function;\n";
+        ss << "};\n\n";
+        if (!entries.empty())
+        {
+            ss << "const GeneratedFunctionTableEntry g_generatedFunctionTableEntries[] = {\n";
+            for (const auto &[address, name] : entries)
+            {
+                const uint32_t slot = (address - tableBase) >> 2;
+                ss << "    {" << std::dec << slot << "u, " << name
+                   << "}, // 0x" << std::hex << address << std::dec << "\n";
+            }
+            ss << "};\n\n";
+        }
         ss << "struct GeneratedFunctionTableInitializer {\n";
         ss << "    GeneratedFunctionTableInitializer() {\n";
-        for (const auto &[address, name] : entries)
+        if (!entries.empty())
         {
-            const uint32_t slot = (address - tableBase) >> 2;
-            ss << "        g_ps2RecompiledFunctionTable[" << std::dec << slot << "] = " << name
-               << "; // 0x" << std::hex << address << std::dec << "\n";
+            ss << "        for (const GeneratedFunctionTableEntry &entry : g_generatedFunctionTableEntries) {\n";
+            ss << "            g_ps2RecompiledFunctionTable[entry.slot] = entry.function;\n";
+            ss << "        }\n";
         }
         ss << "    }\n";
         ss << "};\n";
