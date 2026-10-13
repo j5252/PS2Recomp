@@ -15,6 +15,7 @@
 #   BUILD_TYPE        CMake build type (default: Release)
 #   TESTS=1           also build ps2x_tests for armhf and run it under qemu-arm
 #   CLEAN=1           wipe the build directory before configuring
+#   LTO_ON=1          enable link-time optimization (needs lots of RAM for big games)
 #   JOBS              parallel jobs (default: nproc)
 
 set -euo pipefail
@@ -26,6 +27,8 @@ BUILD_TYPE="${BUILD_TYPE:-Release}"
 BOOT_ELF="${1:-${PS2X_BOOT_ELF:-}}"
 BUILD_TEST=OFF
 BUILD_TOOLS=OFF # ps2xTest links the recompiler/analyzer libraries
+LTO=OFF # whole-game LTO of a commercial title runs out of memory (>7 GB)
+[ "${LTO_ON:-0}" = "1" ] && LTO=ON
 if [ "${TESTS:-0}" = "1" ]; then
     BUILD_TEST=ON
     BUILD_TOOLS=ON
@@ -38,7 +41,7 @@ fi
 ps2x_enter_chroot
 
 ps2x_run CLEAN="${CLEAN:-0}" BUILD_DIR="$BUILD_DIR" BUILD_TYPE="$BUILD_TYPE" \
-    BOOT_ELF="$BOOT_ELF" BUILD_TEST="$BUILD_TEST" BUILD_TOOLS="$BUILD_TOOLS" -- '
+    BOOT_ELF="$BOOT_ELF" BUILD_TEST="$BUILD_TEST" BUILD_TOOLS="$BUILD_TOOLS" LTO="$LTO" -- '
 cd /src
 if [ "$CLEAN" = "1" ]; then rm -rf "$BUILD_DIR"; fi
 
@@ -61,6 +64,7 @@ cmake -S . -B "$BUILD_DIR" -G Ninja \
     -DPS2X_ENABLE_SCCACHE=OFF \
     -DPS2X_ENABLE_FFMPEG=OFF \
     -DPS2X_ENABLE_AGRESSIVE_LOGS=OFF \
+    -DPS2X_ENABLE_LTO="$LTO" \
     -DPS2X_DEFAULT_BOOT_ELF="$BOOT_ELF"
 
 echo "==> building"
