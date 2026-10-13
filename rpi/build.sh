@@ -25,7 +25,11 @@ BUILD_DIR="${BUILD_DIR:-/build/rpi}" # chroot-local: much faster than /mnt/c in 
 BUILD_TYPE="${BUILD_TYPE:-Release}"
 BOOT_ELF="${1:-${PS2X_BOOT_ELF:-}}"
 BUILD_TEST=OFF
-[ "${TESTS:-0}" = "1" ] && BUILD_TEST=ON
+BUILD_TOOLS=OFF # ps2xTest links the recompiler/analyzer libraries
+if [ "${TESTS:-0}" = "1" ]; then
+    BUILD_TEST=ON
+    BUILD_TOOLS=ON
+fi
 
 if [ ! -f "$REPO_ROOT/ps2xRuntime/src/runner/register_functions.cpp" ]; then
     echo "warning: ps2xRuntime/src/runner/ has no recompiled game code; the runner will link without a game." >&2
@@ -34,7 +38,7 @@ fi
 ps2x_enter_chroot
 
 ps2x_run CLEAN="${CLEAN:-0}" BUILD_DIR="$BUILD_DIR" BUILD_TYPE="$BUILD_TYPE" \
-    BOOT_ELF="$BOOT_ELF" BUILD_TEST="$BUILD_TEST" -- '
+    BOOT_ELF="$BOOT_ELF" BUILD_TEST="$BUILD_TEST" BUILD_TOOLS="$BUILD_TOOLS" -- '
 cd /src
 if [ "$CLEAN" = "1" ]; then rm -rf "$BUILD_DIR"; fi
 
@@ -50,8 +54,8 @@ cmake -S . -B "$BUILD_DIR" -G Ninja \
     -DCMAKE_TOOLCHAIN_FILE=/src/rpi/toolchain-armhf.cmake \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
     -DPS2X_RPI_DRM=ON \
-    -DPS2X_BUILD_RECOMP=OFF \
-    -DPS2X_BUILD_ANALYZER=OFF \
+    -DPS2X_BUILD_RECOMP="$BUILD_TOOLS" \
+    -DPS2X_BUILD_ANALYZER="$BUILD_TOOLS" \
     -DPS2X_BUILD_STUDIO=OFF \
     -DPS2X_BUILD_TEST="$BUILD_TEST" \
     -DPS2X_ENABLE_SCCACHE=OFF \
