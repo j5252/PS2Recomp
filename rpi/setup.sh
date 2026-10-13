@@ -41,6 +41,7 @@ echo "==> [3/3] installing cross toolchain and armhf dependencies"
 chroot "$CHROOT" apt-get update
 chroot "$CHROOT" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates git cmake ninja-build pkg-config python3 \
+    build-essential \
     crossbuild-essential-armhf \
     libdrm-dev:armhf libgbm-dev:armhf libegl-dev:armhf libgles-dev:armhf \
     libasound2-dev:armhf \
