@@ -38,7 +38,7 @@ if [ ! -f "$REPO_ROOT/ps2xRuntime/src/runner/register_functions.cpp" ]; then
     echo "warning: ps2xRuntime/src/runner/ has no recompiled game code; the runner will link without a game." >&2
 fi
 
-ps2x_enter_chroot
+ps2x_enter_chroot_synced
 
 ps2x_run CLEAN="${CLEAN:-0}" BUILD_DIR="$BUILD_DIR" BUILD_TYPE="$BUILD_TYPE" \
     BOOT_ELF="$BOOT_ELF" BUILD_TEST="$BUILD_TEST" BUILD_TOOLS="$BUILD_TOOLS" LTO="$LTO" -- '
@@ -87,5 +87,7 @@ cp -f "$RUNNER" /src/outrpi/ps2EntryRunner
 '
 
 echo
+mkdir -p "$REPO_ROOT/outrpi"
+cp -f "$CHROOT/build/src-mirror/outrpi/ps2EntryRunner" "$REPO_ROOT/outrpi/ps2EntryRunner"
 echo "==> done: $REPO_ROOT/outrpi/ps2EntryRunner"
 echo "    copy it to the Pi and run from a text console (no desktop session): ./ps2EntryRunner <game.elf>"

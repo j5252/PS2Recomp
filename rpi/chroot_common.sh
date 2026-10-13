@@ -46,6 +46,27 @@ ps2x_enter_chroot() { # mounts /src, /proc, /dev; registers cleanup
     cp -f /etc/resolv.conf "$CHROOT/etc/resolv.conf" # FetchContent needs DNS
 }
 
+ps2x_enter_chroot_synced() { # like ps2x_enter_chroot, but /src is a chroot-local copy
+    # Large recompiled games (~20k sources) over WSL's /mnt/c (9p) are slow and have
+    # crashed the WSL session during CMake generation; build from a local mirror instead.
+    command -v rsync >/dev/null || fail "rsync not found (apt install rsync)"
+    local mirror="$CHROOT/build/src-mirror"
+    mkdir -p "$mirror"
+    echo "==> syncing sources into $mirror"
+    rsync -a --delete \
+        --exclude=/.git/ --exclude=/outrpi/ --exclude=/rpi/work/ \
+        --exclude=/out/ --exclude=/build/ \
+        "$REPO_ROOT/" "$mirror/"
+
+    trap ps2x_cleanup_mounts EXIT
+    ps2x_mount "$mirror" /src
+    mkdir -p "$CHROOT/proc"
+    mount -t proc proc "$CHROOT/proc"
+    PS2X_MOUNTS+=("$CHROOT/proc")
+    ps2x_mount /dev /dev
+    cp -f /etc/resolv.conf "$CHROOT/etc/resolv.conf" # FetchContent needs DNS
+}
+
 ps2x_run() { # <env assignments...> -- <bash script>
     local envs=()
     while [ "$1" != "--" ]; do envs+=("$1"); shift; done
