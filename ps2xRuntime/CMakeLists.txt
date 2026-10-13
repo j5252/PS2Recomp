@@ -16,6 +16,7 @@ option(PS2X_ENABLE_IOP_RPC_TRACE "Log unhandled IOP/SIF RPC trace suggestions" O
 option(PS2X_STRICT_RETURN_DIAGNOSTICS "Route generated JR $ra returns through runtime branch diagnostics" OFF)
 option(PS2X_SHOW_WINDOWS_CONSOLE "Show a console window for ps2EntryRunner on Windows release builds" ON)
 option(PS2X_ENABLE_DEBUG_UI "Build the desktop runtime debug UI" ON)
+option(PS2X_RPI_DRM "Build raylib for Raspberry Pi KMS/DRM (OpenGL ES 2.0, no X11/Wayland)" OFF)
 
 if(PS2X_ENABLE_SCCACHE)
     find_program(PS2X_SCCACHE_PROGRAM sccache)
@@ -73,6 +74,12 @@ else()
 
     if(PS2X_IS_ANDROID)
         set(PLATFORM "Android" CACHE STRING "" FORCE)
+    endif()
+
+    if(PS2X_RPI_DRM)
+        # VideoCore IV (Pi 2B/3) only exposes GLES2, via the vc4 KMS driver.
+        set(PLATFORM "DRM" CACHE STRING "" FORCE)
+        set(PS2X_ENABLE_DEBUG_UI OFF CACHE BOOL "" FORCE)
     endif()
 
     FetchContent_Declare(

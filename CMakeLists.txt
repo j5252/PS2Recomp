@@ -76,6 +76,12 @@ if(PS2X_IS_ARM_TARGET)
         else()
             add_compile_options(-march=armv8-a+fp+simd)
         endif()
+    elseif(NOT ANDROID AND NOT MSVC AND NOT (CMAKE_CXX_COMPILER MATCHES "arm-vita-eabi"))
+        # Linux ARMv7 hard-float (e.g. Raspberry Pi 2B) - NEON is optional on
+        # ARMv7, so it must be enabled explicitly for sse2neon to work.
+        set(PS2X_ARM32_CPU "cortex-a7" CACHE STRING "-mcpu for 32-bit ARM Linux targets")
+        message(STATUS "Linux ARMv7 - targeting ${PS2X_ARM32_CPU} with NEON (hard-float)")
+        add_compile_options(-mcpu=${PS2X_ARM32_CPU} -mfpu=neon-vfpv4 -mfloat-abi=hard)
     endif()
 endif()
 
