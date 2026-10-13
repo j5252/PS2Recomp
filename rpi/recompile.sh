@@ -79,13 +79,15 @@ echo "==> recompiling"
 
 cp -f "$SCRATCH/config.toml" "$WORK/config.toml"
 
-echo "==> installing generated code into ps2xRuntime/src/runner/"
+echo "==> installing generated code (sources -> src/runner/, headers -> include/)"
 find ps2xRuntime/src/runner -maxdepth 1 -type f \( -name "*.cpp" -o -name "*.h" \) -delete
-cp -f "$SCRATCH"/output/* ps2xRuntime/src/runner/
-echo "    $(ls ps2xRuntime/src/runner | wc -l) files"
+rm -f ps2xRuntime/include/ps2_recompiled_functions.h ps2xRuntime/include/ps2_recompiled_stubs.h
+cp -f "$SCRATCH"/output/*.cpp ps2xRuntime/src/runner/
+cp -f "$SCRATCH"/output/*.h ps2xRuntime/include/
+echo "    $(ls ps2xRuntime/src/runner | wc -l) source files"
 '
 
 echo
 echo "==> done. Config kept at $WORK_REL/config.toml"
 echo "    next: sudo ./rpi/build.sh"
-echo "    restore the stock runner with: git checkout -- ps2xRuntime/src/runner && git clean -f ps2xRuntime/src/runner"
+echo "    restore the stock runner with: git checkout -- ps2xRuntime/src/runner && git clean -fX ps2xRuntime/src/runner ps2xRuntime/include"

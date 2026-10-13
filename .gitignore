@@ -22,5 +22,6 @@ ps2xRuntime/src/runner
 android/app/.cxx/
 android/local.properties
 android/.gradle/ 
-.idea/outrpi/
+.idea/
+outrpi/
 rpi/work/
